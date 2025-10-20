@@ -1,7 +1,8 @@
 package com.example.shoppinglist.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.* // Import Material3 baru
+import androidx.compose.runtime.* // Import State compose
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.shoppinglist.components.ItemInput
@@ -16,8 +17,16 @@ fun HomeScreen(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     shoppingItems: List<String>,
-    onAddItem: () -> Unit
+    onAddItem: () -> Unit,
+    // Parameter baru untuk edit/delete
+    onEditItem: (oldItem: String, newItem: String) -> Unit,
+    onDeleteItem: (item: String) -> Unit
 ) {
+    // State untuk mengontrol dialog edit
+    var itemToEdit by remember { mutableStateOf<String?>(null) }
+    // State untuk nilai field di dalam dialog
+    var editText by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -32,6 +41,67 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
         SearchInput(query = searchQuery, onQueryChange = onSearchQueryChange)
         Spacer(modifier = Modifier.height(16.dp))
-        ShoppingList(items = shoppingItems)
+
+        // Teruskan callback long press ke ShoppingList
+        ShoppingList(
+            items = shoppingItems,
+            onItemLongPress = { item ->
+                itemToEdit = item // Set item yang akan diedit (buka dialog)
+                editText = item  // Set teks awal
+            }
+        )
+    }
+
+    // Tampilkan Dialog jika itemToEdit tidak null
+    if (itemToEdit != null) {
+        AlertDialog(
+            onDismissRequest = {
+                itemToEdit = null // Tutup dialog
+            },
+            title = { Text("Edit Item") },
+            text = {
+                OutlinedTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    label = { Text("Nama Item") },
+                    // Set fokus otomatis (opsional)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editText.isNotBlank()) {
+                            // Panggil callback edit
+                            onEditItem(itemToEdit!!, editText)
+                        }
+                        itemToEdit = null // Tutup dialog
+                    },
+                    enabled = editText.isNotBlank()
+                ) {
+                    Text("Simpan")
+                }
+            },
+            dismissButton = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Tombol Hapus (di sebelah kiri)
+                    TextButton(onClick = {
+                        // Panggil callback delete
+                        onDeleteItem(itemToEdit!!)
+                        itemToEdit = null // Tutup dialog
+                    }) {
+                        Text("Hapus", color = MaterialTheme.colorScheme.error)
+                    }
+                    // Spacer untuk memisahkan
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Tombol Batal (di sebelah kanan)
+                    TextButton(onClick = { itemToEdit = null }) {
+                        Text("Batal")
+                    }
+                }
+            }
+        )
     }
 }

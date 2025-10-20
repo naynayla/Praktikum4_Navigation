@@ -1,3 +1,5 @@
+// MainScreen.kt
+
 package com.example.shoppinglist
 
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -22,12 +24,28 @@ fun MainScreen() {
 
     var newItemText by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
+
+    // --- PERUBAHAN DI SINI: Inisialisasi dengan daftar kosong ---
+    // Ganti: val shoppingItems = remember { mutableStateListOf("Susu Segar", "Roti Tawar", "Telur Ayam") }
     val shoppingItems = remember { mutableStateListOf<String>() }
+    // -------------------------------------------------------------
 
     val filteredItems = if (searchQuery.isBlank()) {
         shoppingItems
     } else {
         shoppingItems.filter { it.contains(searchQuery, ignoreCase = true) }
+    }
+
+    // Logic Edit dan Delete Item (Tetap sama)
+    val onEditItem: (String, String) -> Unit = { oldItem, newItem ->
+        val index = shoppingItems.indexOf(oldItem)
+        if (index != -1) {
+            shoppingItems[index] = newItem
+        }
+    }
+
+    val onDeleteItem: (String) -> Unit = { item ->
+        shoppingItems.remove(item)
     }
 
     ModalNavigationDrawer(
@@ -37,7 +55,6 @@ fun MainScreen() {
                 DrawerContent(
                     onNavigateToSettings = {
                         navController.navigate(Screen.Setting.route) {
-                            // PopUpTo memastikan rute Settings tidak menumpuk
                             popUpTo(Screen.Home.route) { saveState = true }
                         }
                     },
@@ -77,10 +94,12 @@ fun MainScreen() {
                     filteredItems = filteredItems,
                     onAddItem = {
                         if (newItemText.isNotBlank()) {
-                            shoppingItems.add(newItemText)
+                            shoppingItems.add(0, newItemText)
                             newItemText = ""
                         }
-                    }
+                    },
+                    onEditItem = onEditItem,
+                    onDeleteItem = onDeleteItem
                 )
             }
         }

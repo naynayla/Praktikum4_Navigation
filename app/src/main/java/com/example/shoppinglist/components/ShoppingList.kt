@@ -7,7 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,14 +30,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.shoppinglist.ui.theme.ShoppingListTheme
 import kotlinx.coroutines.delay
+// Import yang hilang
+import androidx.compose.foundation.BorderStroke
+
 
 @Composable
-fun ShoppingList(items: List<String>) {
+fun ShoppingList(items: List<String>, onItemLongPress: (String) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -46,16 +51,15 @@ fun ShoppingList(items: List<String>) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(items, key = { it }) { item ->
-            AnimatedShoppingListItem(item = item)
+            AnimatedShoppingListItem(item = item, onItemLongPress = onItemLongPress)
         }
     }
 }
 
 @Composable
-fun AnimatedShoppingListItem(item: String) {
+fun AnimatedShoppingListItem(item: String, onItemLongPress: (String) -> Unit) {
     var isVisible by remember { mutableStateOf(false) }
 
-    // Trigger animasi saat item pertama kali muncul
     LaunchedEffect(item) {
         delay(100)
         isVisible = true
@@ -66,15 +70,18 @@ fun AnimatedShoppingListItem(item: String) {
         enter = fadeIn(animationSpec = tween(600)) +
                 expandVertically(animationSpec = tween(600))
     ) {
-        ShoppingListItem(item)
+        ShoppingListItem(item, onItemLongPress)
     }
 }
 
 @Composable
-fun ShoppingListItem(item: String) {
+fun ShoppingListItem(item: String, onItemLongPress: (String) -> Unit) {
     var isSelected by remember { mutableStateOf(false) }
     var isPressed by remember { mutableStateOf(false) }
 
+    val haptics = LocalHapticFeedback.current
+
+    // --- Deklarasi yang hilang (Dikembalikan) ---
     // Animasi warna
     val backgroundColor by animateColorAsState(
         targetValue = if (isSelected) {
@@ -98,31 +105,40 @@ fun ShoppingListItem(item: String) {
         label = "contentColor"
     )
 
-    // Animasi elevasi
+    // Animasi elevasi (VARIABEL YANG MENGATASI ERROR 'Unresolved reference: elevation')
     val elevation by animateDpAsState(
         targetValue = if (isPressed) 12.dp else if (isSelected) 8.dp else 4.dp,
         animationSpec = tween(200),
         label = "elevation"
     )
+    // ----------------------------------------------
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
+                // Sekarang variabel 'elevation' sudah terdefinisikan
                 elevation = elevation,
                 shape = RoundedCornerShape(16.dp),
                 clip = false
             )
-            .clickable {
-                isSelected = !isSelected
-            },
+            .combinedClickable(
+                onClick = {
+                    isSelected = !isSelected
+                },
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onItemLongPress(item)
+                }
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor,
             contentColor = contentColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(
+        // Sekarang BorderStroke sudah terimpor
+        border = BorderStroke(
             width = 1.dp,
             color = if (isSelected) {
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
@@ -196,7 +212,7 @@ fun ShoppingListPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            ShoppingList(items = listOf("Susu Segar", "Roti Tawar", "Telur Ayam", "Apel Fuji", "Daging Sapi"))
+            ShoppingList(items = listOf("Susu Segar", "Roti Tawar", "Telur Ayam", "Apel Fuji", "Daging Sapi"), onItemLongPress = {})
         }
     }
 }

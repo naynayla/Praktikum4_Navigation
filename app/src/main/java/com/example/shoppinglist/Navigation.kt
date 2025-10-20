@@ -29,7 +29,10 @@ fun AppNavigation(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     filteredItems: List<String>,
-    onAddItem: () -> Unit
+    onAddItem: () -> Unit,
+    // Parameter baru
+    onEditItem: (oldItem: String, newItem: String) -> Unit,
+    onDeleteItem: (item: String) -> Unit
 ) {
     AnimatedNavHost(
         navController = navController,
@@ -45,7 +48,10 @@ fun AppNavigation(
                 searchQuery = searchQuery,
                 onSearchQueryChange = onSearchQueryChange,
                 shoppingItems = filteredItems,
-                onAddItem = onAddItem
+                onAddItem = onAddItem,
+                // Teruskan parameter baru ke HomeScreen
+                onEditItem = onEditItem,
+                onDeleteItem = onDeleteItem
             )
         }
         composable(Screen.Profile.route) { ProfileScreen() }
